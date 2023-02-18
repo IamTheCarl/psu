@@ -2,8 +2,10 @@
 name = "psu"
 version = "1.0.0"
 edition = "2021"
-license = "GNU"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/IamTheCarl/psu"
+description = "A command line tool to control lab bench power supplies."
+readme = "README.md"
 
 [dependencies]
 tokio = { version = "1.25.0", features = ["full"] }

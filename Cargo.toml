@@ -1,0 +1,15 @@
+[package]
+name = "psu"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.25.0", features = ["full"] }
+tokio-serial = "5.4.4"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_yaml = "0.9.17"
+argh = "0.1.10"
+anyhow = "1.0.69"
+log = "0.4.17"
+simple_logger = "4.0.0"
+home = "0.5.4"

@@ -2,6 +2,8 @@
 name = "psu"
 version = "1.0.0"
 edition = "2021"
+license = "GNU"
+repository = "https://github.com/IamTheCarl/psu"
 
 [dependencies]
 tokio = { version = "1.25.0", features = ["full"] }

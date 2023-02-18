@@ -1,27 +1,21 @@
-use std::time::Duration;
-
 use anyhow::{Context, Result};
 use argh::FromArgs;
-use serde::Deserialize;
-use tokio::fs;
-use tokio_serial::SerialPort;
 
-#[derive(Deserialize)]
-struct Config {
-    serial_interface: String,
-    address: u8,
-}
+mod config;
+use config::Config;
+
+mod power_supplies;
 
 /// Control your power supply.
 #[derive(FromArgs, PartialEq, Debug)]
 struct Arguments {
     #[argh(subcommand)]
-    command: ArgumentCommand,
+    command: UserCommand,
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
 #[argh(subcommand)]
-enum ArgumentCommand {
+enum UserCommand {
     PowerOn(PowerOn),
     PowerOff(PowerOff),
     SetLimits(SetLimits),
@@ -68,112 +62,43 @@ async fn main() {
 
 async fn trampoline() -> Result<()> {
     let arguments: Arguments = argh::from_env();
+    let config = Config::load().await?;
 
-    let home_directory = home::home_dir().context("Could not get user's home directory.")?;
-    let config = fs::read_to_string(
-        home_directory
-            .join(".config")
-            .join("bk_precision_interface.yaml"),
-    )
-    .await?;
-
-    let config: Config =
-        serde_yaml::from_str(&config).context("Failed to deserialize config file.")?;
-
-    log::info!("Serial interface: {:?}", config.serial_interface);
-    let mut serial = tokio_serial::new(config.serial_interface, 9600)
-        .data_bits(tokio_serial::DataBits::Eight)
-        .parity(tokio_serial::Parity::None)
-        .stop_bits(tokio_serial::StopBits::One)
-        .open()
-        .context("Failed to open serial port.")?;
-
-    Command::SESS.send(config.address, &mut serial).await?;
+    let mut power_supply = config
+        .get_power_supply()
+        .await
+        .context("Failed to prepare power supply.")?;
 
     match arguments.command {
-        ArgumentCommand::PowerOn(power_on) => {
+        UserCommand::PowerOn(power_on) => {
             if let Some(voltage_limit) = power_on.voltage_limit {
-                Command::VOLT {
-                    voltage: voltage_limit,
-                }
-                .send(config.address, &mut serial)
-                .await?;
+                power_supply.set_voltage_limit(voltage_limit).await?;
             }
 
             if let Some(current_limit) = power_on.current_limit {
-                Command::CURR {
-                    current: current_limit,
-                }
-                .send(config.address, &mut serial)
-                .await?;
+                power_supply.set_current_limit(current_limit).await?;
             }
 
-            Command::SOUT { enabled: true }
-                .send(config.address, &mut serial)
-                .await?;
+            power_supply.enable_output(true).await?;
         }
-        ArgumentCommand::PowerOff(_) => {
-            Command::SOUT { enabled: false }
-                .send(config.address, &mut serial)
-                .await?;
+        UserCommand::PowerOff(_) => {
+            power_supply.enable_output(false).await?;
         }
-        ArgumentCommand::SetLimits(limits) => {
+        UserCommand::SetLimits(limits) => {
             if let Some(voltage_limit) = limits.voltage_limit {
-                Command::VOLT {
-                    voltage: voltage_limit,
-                }
-                .send(config.address, &mut serial)
-                .await?;
+                power_supply.set_voltage_limit(voltage_limit).await?;
             }
 
             if let Some(current_limit) = limits.current_limit {
-                Command::CURR {
-                    current: current_limit,
-                }
-                .send(config.address, &mut serial)
-                .await?;
+                power_supply.set_current_limit(current_limit).await?;
             }
         }
     }
 
-    Command::ENDS.send(config.address, &mut serial).await?;
+    power_supply
+        .close()
+        .await
+        .context("Failed to close power supply interface.")?;
 
     Ok(())
-}
-
-const CR: &str = "\r";
-
-#[allow(clippy::upper_case_acronyms)]
-enum Command {
-    SESS,
-    ENDS,
-    VOLT { voltage: f32 },
-    CURR { current: f32 },
-    SOUT { enabled: bool },
-}
-
-impl Command {
-    async fn send(&self, address: u8, serial: &mut Box<dyn SerialPort>) -> Result<()> {
-        let to_send = match self {
-            Command::SESS => format!("SESS{:02}{}", address, CR),
-            Command::ENDS => format!("ENDS{:02}{}", address, CR),
-            Command::VOLT { voltage } => format!("VOLT{:02}{:03}{}", address, voltage * 10.0, CR),
-            Command::CURR { current } => format!("CURR{:02}{:03}{}", address, current * 100.0, CR),
-            Command::SOUT { enabled } => {
-                format!(
-                    "SOUT{:02}{}{}",
-                    address,
-                    if *enabled { "0" } else { "1" },
-                    CR
-                )
-            }
-        };
-
-        log::trace!("SEND: {}", to_send);
-
-        serial.write_all(to_send.as_bytes())?;
-        tokio::time::sleep(Duration::from_millis(100)).await;
-
-        Ok(())
-    }
 }

@@ -1,3 +1,6 @@
+// Copyright James Carl (C) 2023
+// GPL-3.0-or-later
+
 //! Handles configuration.
 use anyhow::{Context, Result};
 use serde::Deserialize;

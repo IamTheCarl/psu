@@ -1,3 +1,6 @@
+// Copyright James Carl (C) 2023
+// GPL-3.0-or-later
+
 use anyhow::{Context, Result};
 use argh::FromArgs;
 

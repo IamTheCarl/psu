@@ -16,7 +16,8 @@ I can only support what I can test and I can only test what I have, so this list
 ## Installation
 
 PSU can be installed through [crates.io](https://crates.io/). You can run `cargo install psu` to get it.
-It is also available as a Nix derivation.
+
+It is also available as a Nix derivation. Add `import (builtins.fetchTarball "https://github.com/IamTheCarl/psu/archive/master.tar.gz") {}` as a package in your your shell environment's build inputs.
 
 ## Usage
 

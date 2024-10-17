@@ -15,7 +15,8 @@ I can only support what I can test and I can only test what I have, so this list
 
 ## Installation
 
-Currently I'm just distributing it through [crates.io](https://crates.io/). You can run `cargo install psu` to get it. More packages may be added later.
+PSU can be installed through [crates.io](https://crates.io/). You can run `cargo install psu` to get it.
+It is also available as a Nix derivation.
 
 ## Usage
 

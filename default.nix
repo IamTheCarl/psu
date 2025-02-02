@@ -13,8 +13,7 @@ rust_platform.buildRustPackage rec {
   version = cargo_toml.package.version;
 
   src = ./.;
-
-  cargoHash = "sha256-NfQHz+cHCHB8Yg7bpDLTJF2mRvIvwVCcYSDypMOJdSk=";
+  cargoLock.lockFile = ./Cargo.lock;
 
   propigatedBuildInputs = [
     pkgs.nix

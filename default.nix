@@ -14,7 +14,7 @@ rust_platform.buildRustPackage rec {
 
   src = ./.;
 
-  cargoHash = "sha256-NfQHz+cHCHB8Yg7bpDLTJF2mRvIvwVCcYSDypMOJdSk=";
+  cargoHash = "sha256-pycjuN0M23xTdQ4WKPxNvMo5PcjR9PrlOOTdMDYgEm8=";
 
   propigatedBuildInputs = [
     pkgs.nix
